@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import {useLayoutEffect, useRef} from "react";
+import {useLayoutEffect, useRef, useState} from "react";
 
 
 class DemoGame extends Phaser.Game {
@@ -54,7 +54,6 @@ class DemoScene extends Phaser.Scene {
         this.cursors = this.input.keyboard.createCursorKeys();
 
         this.scale.on('resize', (gameSize: Phaser.Structs.Size) => {
-            console.log(gameSize);
             const width = gameSize.width;
             const height = gameSize.height;
             this.cameras.resize(width, height);
@@ -88,17 +87,47 @@ class DemoScene extends Phaser.Scene {
 
 export function Game() {
     const gameRef = useRef<DemoGame | null>(null);
+    const originalSize = useRef<{ width: number; height: number } | null>(null)
     const parentRef = useRef<HTMLDivElement | null>(null);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const [useObserver, setUseObserver] = useState(false);
 
     useLayoutEffect(() => {
         if (parentRef.current && canvasRef.current) {
             gameRef.current = new DemoGame(parentRef.current, canvasRef.current);
+            originalSize.current = {width: gameRef.current.scale.width, height: gameRef.current.scale.height};
         }
     }, []);
 
-    return <div style={{height: '100%', width: '100%'}} ref={parentRef}>
-        <canvas ref={canvasRef}/>
+    useLayoutEffect(() => {
+        const resizeListener = () => {
+            if (useObserver && parentRef.current && gameRef.current) {
+                const size = parentRef.current.getBoundingClientRect();
+                gameRef.current.scale.resize(size.width - 10, size.height - 10);
+            }
+        }
+        window.addEventListener('resize', resizeListener)
+        if (useObserver) {
+            resizeListener();
+        } else {
+            if (gameRef.current && originalSize.current) {
+                gameRef.current.scale.resize(originalSize.current.width, originalSize.current.height);
+            }
+        }
+
+        return () => {
+            window.removeEventListener('resize', resizeListener);
+        }
+    }, [useObserver]);
+
+    return <div style={{height: '100%', width: '100%', display: 'flex', flexDirection: 'column'}}>
+        <button onClick={() => setUseObserver((prev) => !prev)}>{useObserver ? 'Disable' : 'Enable'} Resize
+            Observer
+        </button>
+        <div ref={parentRef} style={{height: '100%', width: '100%'}}>
+            <canvas ref={canvasRef}/>
+        </div>
     </div>
+
 
 }
