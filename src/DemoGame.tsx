@@ -84,6 +84,12 @@ class DemoScene extends Phaser.Scene {
             // Update the scale for every sprite/background/etc.
             this.background.setScale(width / this.originalSize.width, height / this.originalSize.height);
             this.character.setScale(width / this.originalSize.width, height / this.originalSize.height);
+
+            // Likely some additional logic, so that any existing items are not
+            // moved offscreen when resizing.
+            if (this.character.y + this.character.displayHeight >= height) {
+                this.character.setY(height - this.character.displayHeight);
+            }
         })
 
         const resize = (changeX: number, changeY: number, lastKey: string) => {
