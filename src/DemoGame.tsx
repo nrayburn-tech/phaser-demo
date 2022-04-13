@@ -52,12 +52,12 @@ class DemoScene extends Phaser.Scene {
     }
 
     create() {
+        // Setup, nothing really special here.
         this.physics.world.setBounds(0, 0, this.scale.width, this.scale.height);
         this.cameras.resize(this.scale.width, this.scale.height);
         this.background = this.add.tileSprite(0, 0, this.scale.width, this.scale.height, this.BACKGROUND_KEY).setOrigin(0);
-        this.character = this.physics.add.sprite(150, this.game.canvas.height / 2, this.CHARACTER_KEY);
+        this.character = this.physics.add.sprite(150, this.scale.height / 3, this.CHARACTER_KEY).setOrigin(0);
         this.cursorText = this.add.text(0, 0, '', {color: 'black', fontSize: '2rem'});
-        this.originalSize = {width: this.scale.width, height: this.scale.height};
         this.cursors = this.input.keyboard.createCursorKeys();
         this.character.anims.create({
             key: 'move',
@@ -66,10 +66,22 @@ class DemoScene extends Phaser.Scene {
         });
         this.character.anims.play('move', true);
 
+        // Store the original size of the game, so that the correct scaling can be calculated
+        // when resizing.
+        this.originalSize = {width: this.scale.width, height: this.scale.height};
+
+        // On game resize, this event is triggered.
+        // This is done when this.game.scale.resize is called, but Phaser also
+        // seems to call it automatically in some cases.
         this.scale.on('resize', (gameSize: Phaser.Structs.Size) => {
             const width = gameSize.width;
             const height = gameSize.height;
+
+            // A single camera is used that is the same size of the game,
+            // so it can be resized and not scaled.
             this.cameras.resize(width, height);
+
+            // Update the scale for every sprite/background/etc.
             this.background.setScale(width / this.originalSize.width, height / this.originalSize.height);
             this.character.setScale(width / this.originalSize.width, height / this.originalSize.height);
         })
@@ -79,6 +91,7 @@ class DemoScene extends Phaser.Scene {
             this.cursorText.text = lastKey;
         }
 
+        // When the arrow keys are used, resize the game.
         this.cursors.up.on('up', () => {
             resize(0, -100, 'up');
         })
@@ -91,9 +104,10 @@ class DemoScene extends Phaser.Scene {
         this.cursors.right.on('up', () => {
             resize(100, 0, 'right');
         })
+
+        // Pushing space will reset the size and scale.
         this.cursors.space.on('up', () => {
             this.game.scale.resize(this.originalSize.width, this.originalSize.height);
-            this.background.setScale(1, 1);
             this.cursorText.text = '';
         })
     }
