@@ -32,9 +32,11 @@ class DemoGame extends Phaser.Game {
 class DemoScene extends Phaser.Scene {
     declare game: DemoGame;
     private BACKGROUND_KEY = 'background';
+    private CHARACTER_KEY = 'character';
+    private background!: Phaser.GameObjects.TileSprite;
+    private character!: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
     private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
     private cursorText!: Phaser.GameObjects.Text;
-    private background!: Phaser.GameObjects.TileSprite;
     private originalSize!: { width: number; height: number };
 
     constructor(key: string) {
@@ -43,21 +45,33 @@ class DemoScene extends Phaser.Scene {
 
     preload() {
         this.load.image(this.BACKGROUND_KEY, '/Background.png');
+        this.load.spritesheet(this.CHARACTER_KEY, '/Fish.png', {
+            frameWidth: 256,
+            frameHeight: 256,
+        });
     }
 
     create() {
         this.physics.world.setBounds(0, 0, this.scale.width, this.scale.height);
         this.cameras.resize(this.scale.width, this.scale.height);
         this.background = this.add.tileSprite(0, 0, this.scale.width, this.scale.height, this.BACKGROUND_KEY).setOrigin(0);
+        this.character = this.physics.add.sprite(150, this.game.canvas.height / 2, this.CHARACTER_KEY);
         this.cursorText = this.add.text(0, 0, '', {color: 'black', fontSize: '2rem'});
         this.originalSize = {width: this.scale.width, height: this.scale.height};
         this.cursors = this.input.keyboard.createCursorKeys();
+        this.character.anims.create({
+            key: 'move',
+            repeat: -1,
+            frames: this.anims.generateFrameNumbers(this.CHARACTER_KEY, {})
+        });
+        this.character.anims.play('move', true);
 
         this.scale.on('resize', (gameSize: Phaser.Structs.Size) => {
             const width = gameSize.width;
             const height = gameSize.height;
             this.cameras.resize(width, height);
             this.background.setScale(width / this.originalSize.width, height / this.originalSize.height);
+            this.character.setScale(width / this.originalSize.width, height / this.originalSize.height);
         })
 
         const resize = (changeX: number, changeY: number, lastKey: string) => {
